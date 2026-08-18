@@ -23,6 +23,25 @@ export async function getMe(token) {
   });
 }
 
+export async function getUsers(token) {
+  return request("/users", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function updateCredentials(token, { email, password }) {
+  return request("/update", {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ email, password }),
+  });
+}
+
 async function request(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     headers: {

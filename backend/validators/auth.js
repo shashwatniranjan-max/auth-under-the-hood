@@ -11,6 +11,11 @@ const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+const updateSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
 function validate(schema) {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);
@@ -23,4 +28,4 @@ function validate(schema) {
   };
 }
 
-module.exports = { signupSchema, loginSchema, validate };
+module.exports = { signupSchema, loginSchema, updateSchema, validate };

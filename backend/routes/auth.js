@@ -6,6 +6,7 @@ const auth = require("../middleware/auth");
 const {
   signupSchema,
   loginSchema,
+  updateSchema,
   validate,
 } = require("../validators/auth");
 
@@ -75,6 +76,51 @@ router.get("/me", auth, async (req, res) => {
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    return res.status(200).json({ user: publicUser(user) });
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/users", auth, async (req, res) => {
+  try {
+    const users = await User.find().select("username email password");
+    return res.status(200).json({
+      users: users.map((user) => ({
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        password: user.password,
+      })),
+    });
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.put("/update", auth, validate(updateSchema), async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const emailTaken = await User.findOne({
+      email,
+      _id: { $ne: req.userId },
+    });
+    if (emailTaken) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { email, password: hashedPassword },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     return res.status(200).json({ user: publicUser(user) });
   } catch (err) {
     return res.status(500).json({ message: "Server error" });
