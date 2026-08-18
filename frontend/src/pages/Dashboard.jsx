@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getMe, getUsers, updateCredentials } from "../api";
+import { deleteAccount, getMe, getUsers, updateCredentials } from "../api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -11,6 +11,9 @@ export default function Dashboard() {
   const [updateError, setUpdateError] = useState("");
   const [updateSuccess, setUpdateSuccess] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -59,6 +62,31 @@ export default function Dashboard() {
       setUpdateError(err.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onDelete(e) {
+    e.preventDefault();
+    setDeleteError("");
+
+    if (
+      !window.confirm(
+        "Delete your account permanently? This cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    setDeleting(true);
+    const token = localStorage.getItem("token");
+    try {
+      await deleteAccount(token, { password: deletePassword });
+      localStorage.removeItem("token");
+      navigate("/login");
+    } catch (err) {
+      setDeleteError(err.message);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -228,6 +256,42 @@ export default function Dashboard() {
             className="w-full rounded-md bg-slate-800 px-4 py-2.5 font-medium text-white hover:bg-slate-700 disabled:opacity-60 sm:w-auto"
           >
             {saving ? "Saving..." : "Update credentials"}
+          </button>
+        </form>
+
+        <form
+          onSubmit={onDelete}
+          className="rounded-xl border border-red-100 bg-white p-4 shadow-md sm:p-6"
+        >
+          <h2 className="mb-1 text-lg font-semibold text-red-800">
+            Delete account
+          </h2>
+          <p className="mb-4 text-sm text-slate-600">
+            Enter your current password to permanently remove your record from
+            MongoDB.
+          </p>
+          {deleteError && (
+            <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              {deleteError}
+            </p>
+          )}
+          <label className="mb-6 block text-sm font-medium text-slate-700">
+            Password
+            <input
+              name="deletePassword"
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              required
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base text-slate-900 outline-none focus:border-red-400"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={deleting}
+            className="w-full rounded-md bg-red-700 px-4 py-2.5 font-medium text-white hover:bg-red-600 disabled:opacity-60 sm:w-auto"
+          >
+            {deleting ? "Deleting..." : "Delete my account"}
           </button>
         </form>
       </div>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Identification</title>
+    <script>
+      (function () {
+        var origin = location.origin;
+        var path = location.pathname;
+        var search = location.search || "";
+        var repo = "/auth-under-the-hood";
+        var base = path.indexOf(repo) === 0 ? repo : "";
+        var rest = path.slice(base.length) || "/";
+        location.replace(origin + base + "/#" + rest + search);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

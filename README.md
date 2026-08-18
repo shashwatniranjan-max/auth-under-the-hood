@@ -44,5 +44,8 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 | POST | `/api/auth/signup` | No |
 | POST | `/api/auth/login` | No |
 | GET | `/api/auth/me` | JWT |
+| GET | `/api/auth/users` | JWT |
+| PUT | `/api/auth/update` | JWT |
+| DELETE | `/api/auth/account` | JWT + password |
 
 Frontend: `/signup`, `/login`, `/dashboard` (protected).

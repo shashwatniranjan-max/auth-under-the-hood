@@ -46,6 +46,16 @@ export async function updateCredentials(token, { email, password }) {
   });
 }
 
+export async function deleteAccount(token, { password }) {
+  return request("/account", {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ password }),
+  });
+}
+
 async function request(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     headers: {

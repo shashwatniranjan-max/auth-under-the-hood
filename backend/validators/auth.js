@@ -16,6 +16,10 @@ const updateSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Password is required"),
+});
+
 function validate(schema) {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);
@@ -28,4 +32,10 @@ function validate(schema) {
   };
 }
 
-module.exports = { signupSchema, loginSchema, updateSchema, validate };
+module.exports = {
+  signupSchema,
+  loginSchema,
+  updateSchema,
+  deleteAccountSchema,
+  validate,
+};
