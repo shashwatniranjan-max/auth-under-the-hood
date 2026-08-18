@@ -23,7 +23,9 @@ npm install
 npm start
 ```
 
-API runs at `http://localhost:5000`.
+API runs locally at `http://localhost:5000`. Deployed API: `https://auth-under-the-hood.onrender.com`.
+
+The frontend uses that deployed URL by default. To talk to a local backend instead, set `VITE_API_URL=http://localhost:5000` in `frontend/.env`.
 
 ### Frontend
 

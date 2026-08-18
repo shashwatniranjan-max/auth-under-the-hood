@@ -1,4 +1,8 @@
-const API_URL = "http://localhost:5000/api/auth";
+const API_BASE = (
+  import.meta.env.VITE_API_URL || "https://auth-under-the-hood.onrender.com"
+).replace(/\/$/, "");
+
+const API_URL = `${API_BASE}/api/auth`;
 
 export async function signup({ username, email, password }) {
   return request("/signup", {

@@ -32,12 +32,12 @@ export default function Signup() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-slate-100 px-4 py-8">
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-md rounded-xl bg-white p-8 shadow-md"
+        className="w-full max-w-md rounded-xl bg-white p-5 shadow-md sm:p-8"
       >
-        <h1 className="mb-6 text-2xl font-semibold text-slate-800">
+        <h1 className="mb-6 text-xl font-semibold text-slate-800 sm:text-2xl">
           Create an account
         </h1>
         {error && (
@@ -53,7 +53,7 @@ export default function Signup() {
             onChange={onChange}
             required
             minLength={3}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-500"
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base text-slate-900 outline-none focus:border-slate-500"
           />
         </label>
         <label className="mb-4 block text-sm font-medium text-slate-700">
@@ -64,7 +64,7 @@ export default function Signup() {
             value={form.email}
             onChange={onChange}
             required
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-500"
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base text-slate-900 outline-none focus:border-slate-500"
           />
         </label>
         <label className="mb-6 block text-sm font-medium text-slate-700">
@@ -76,13 +76,13 @@ export default function Signup() {
             onChange={onChange}
             required
             minLength={6}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-500"
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base text-slate-900 outline-none focus:border-slate-500"
           />
         </label>
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-md bg-slate-800 py-2 font-medium text-white hover:bg-slate-700 disabled:opacity-60"
+          className="w-full rounded-md bg-slate-800 py-2.5 font-medium text-white hover:bg-slate-700 disabled:opacity-60"
         >
           {loading ? "Signing up..." : "Sign up"}
         </button>
