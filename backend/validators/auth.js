@@ -1,18 +1,18 @@
 const { z } = require("zod");
 
 const signupSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Invalid email format"),
+  username: z.string().trim().min(3, "Username must be at least 3 characters"),
+  email: z.string().trim().email("Invalid email format").toLowerCase(),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email format"),
+  email: z.string().trim().email("Invalid email format").toLowerCase(),
   password: z.string().min(1, "Password is required"),
 });
 
 const updateSchema = z.object({
-  email: z.string().email("Invalid email format"),
+  email: z.string().trim().email("Invalid email format").toLowerCase(),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 

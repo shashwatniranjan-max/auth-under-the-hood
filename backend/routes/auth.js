@@ -14,17 +14,24 @@ const {
 const router = express.Router();
 
 function signToken(userId) {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: String(userId) }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 }
 
 function publicUser(user) {
   return {
-    id: user._id,
+    id: String(user._id),
     username: user.username,
     email: user.email,
   };
+}
+
+function handleMongoError(err, res) {
+  if (err && err.code === 11000) {
+    return res.status(400).json({ message: "Email already in use" });
+  }
+  return res.status(500).json({ message: "Server error" });
 }
 
 router.post("/signup", validate(signupSchema), async (req, res) => {
@@ -46,7 +53,7 @@ router.post("/signup", validate(signupSchema), async (req, res) => {
     const token = signToken(user._id);
     return res.status(201).json({ token, user: publicUser(user) });
   } catch (err) {
-    return res.status(500).json({ message: "Server error" });
+    return handleMongoError(err, res);
   }
 });
 
@@ -88,7 +95,7 @@ router.get("/users", auth, async (req, res) => {
     const users = await User.find().select("username email password");
     return res.status(200).json({
       users: users.map((user) => ({
-        id: user._id,
+        id: String(user._id),
         username: user.username,
         email: user.email,
         password: user.password,
@@ -124,34 +131,29 @@ router.put("/update", auth, validate(updateSchema), async (req, res) => {
 
     return res.status(200).json({ user: publicUser(user) });
   } catch (err) {
-    return res.status(500).json({ message: "Server error" });
+    return handleMongoError(err, res);
   }
 });
 
-router.delete(
-  "/account",
-  auth,
-  validate(deleteAccountSchema),
-  async (req, res) => {
-    try {
-      const { password } = req.body;
-      const user = await User.findById(req.userId);
+router.post("/delete", auth, validate(deleteAccountSchema), async (req, res) => {
+  try {
+    const { password } = req.body;
+    const user = await User.findById(req.userId);
 
-      if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      const match = await bcrypt.compare(password, user.password);
-      if (!match) {
-        return res.status(401).json({ message: "Invalid password" });
-      }
-
-      await User.findByIdAndDelete(req.userId);
-      return res.status(200).json({ message: "Account deleted" });
-    } catch (err) {
-      return res.status(500).json({ message: "Server error" });
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({ message: "Invalid password" });
+    }
+
+    await User.findByIdAndDelete(req.userId);
+    return res.status(200).json({ message: "Account deleted" });
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
   }
-);
+});
 
 module.exports = router;

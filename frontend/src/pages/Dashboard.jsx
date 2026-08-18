@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteAccount, getMe, getUsers, updateCredentials } from "../api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const menuRef = useRef(null);
   const [user, setUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
@@ -14,6 +15,8 @@ export default function Dashboard() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [panel, setPanel] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -28,16 +31,40 @@ export default function Dashboard() {
         setUsers(usersData.users);
         setForm({ email: meData.user.email, password: "" });
       })
-      .catch((err) => {
-        setError(err.message);
-        localStorage.removeItem("token");
-        navigate("/login");
+      .catch(async (err) => {
+        try {
+          const meData = await getMe(token);
+          setUser(meData.user);
+          setForm({ email: meData.user.email, password: "" });
+          setError(err.message || "Could not load users");
+        } catch {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
       });
   }, [navigate]);
+
+  useEffect(() => {
+    function onPointerDown(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
 
   function logout() {
     localStorage.removeItem("token");
     navigate("/login");
+  }
+
+  function openPanel(nextPanel) {
+    setMenuOpen(false);
+    setPanel(nextPanel);
+    setUpdateError("");
+    setUpdateSuccess("");
+    setDeleteError("");
   }
 
   function onChange(e) {
@@ -57,7 +84,9 @@ export default function Dashboard() {
       setForm({ email: data.user.email, password: "" });
       const usersData = await getUsers(token);
       setUsers(usersData.users);
-      setUpdateSuccess("Credentials updated. The table now shows the new email and bcrypt hash.");
+      setUpdateSuccess(
+        "Credentials updated. The table now shows the new email and bcrypt hash."
+      );
     } catch (err) {
       setUpdateError(err.message);
     } finally {
@@ -90,7 +119,7 @@ export default function Dashboard() {
     }
   }
 
-  if (!user && !error) {
+  if (!user) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-slate-100 px-4 text-slate-600">
         Loading...
@@ -99,8 +128,156 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-dvh bg-slate-100 px-3 py-6 sm:px-4 sm:py-10">
-      <div className="mx-auto w-full max-w-5xl space-y-4 sm:space-y-6">
+    <div className="relative min-h-dvh bg-slate-100 px-3 py-6 sm:px-4 sm:py-10">
+      <div ref={menuRef} className="absolute top-3 left-3 z-30 sm:top-4 sm:left-4">
+        <button
+          type="button"
+          aria-label="Account options"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+          className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          <span className="flex flex-col gap-1">
+            <span className="block h-0.5 w-3.5 rounded bg-slate-700" />
+            <span className="block h-0.5 w-3.5 rounded bg-slate-700" />
+            <span className="block h-0.5 w-3.5 rounded bg-slate-700" />
+          </span>
+        </button>
+        {menuOpen && (
+          <div className="absolute top-11 left-0 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+            <button
+              type="button"
+              onClick={() => openPanel("update")}
+              className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+            >
+              Update credentials
+            </button>
+            <button
+              type="button"
+              onClick={() => openPanel("delete")}
+              className="block w-full px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+            >
+              Delete account
+            </button>
+          </div>
+        )}
+      </div>
+
+      {panel && (
+        <div
+          className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-slate-900/40 px-3 py-16 sm:items-center"
+          onClick={() => setPanel(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl sm:p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {panel === "update" && (
+              <form onSubmit={onUpdate}>
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <h2 className="text-lg font-semibold text-slate-800">
+                    Update credentials
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setPanel(null)}
+                    className="text-sm text-slate-500 hover:text-slate-800"
+                  >
+                    Close
+                  </button>
+                </div>
+                {updateError && (
+                  <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {updateError}
+                  </p>
+                )}
+                {updateSuccess && (
+                  <p className="mb-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+                    {updateSuccess}
+                  </p>
+                )}
+                <label className="mb-4 block text-sm font-medium text-slate-700">
+                  New email
+                  <input
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={onChange}
+                    required
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base text-slate-900 outline-none focus:border-slate-500"
+                  />
+                </label>
+                <label className="mb-6 block text-sm font-medium text-slate-700">
+                  New password
+                  <input
+                    name="password"
+                    type="password"
+                    value={form.password}
+                    onChange={onChange}
+                    required
+                    minLength={6}
+                    placeholder="At least 6 characters"
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base text-slate-900 outline-none focus:border-slate-500"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="w-full rounded-md bg-slate-800 px-4 py-2.5 font-medium text-white hover:bg-slate-700 disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Update credentials"}
+                </button>
+              </form>
+            )}
+
+            {panel === "delete" && (
+              <form onSubmit={onDelete}>
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <h2 className="text-lg font-semibold text-red-800">
+                    Delete account
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setPanel(null)}
+                    className="text-sm text-slate-500 hover:text-slate-800"
+                  >
+                    Close
+                  </button>
+                </div>
+                <p className="mb-4 text-sm text-slate-600">
+                  Enter your current password to permanently remove your record
+                  from MongoDB.
+                </p>
+                {deleteError && (
+                  <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {deleteError}
+                  </p>
+                )}
+                <label className="mb-6 block text-sm font-medium text-slate-700">
+                  Password
+                  <input
+                    name="deletePassword"
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    required
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base text-slate-900 outline-none focus:border-red-400"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={deleting}
+                  className="w-full rounded-md bg-red-700 px-4 py-2.5 font-medium text-white hover:bg-red-600 disabled:opacity-60"
+                >
+                  {deleting ? "Deleting..." : "Delete my account"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="mx-auto w-full max-w-5xl space-y-4 pt-8 sm:space-y-6 sm:pt-4">
         <div className="flex flex-col gap-4 rounded-xl bg-white p-4 shadow-md sm:flex-row sm:items-start sm:justify-between sm:p-6">
           <div className="min-w-0">
             <h1 className="text-xl font-semibold break-words text-slate-800 sm:text-2xl">
@@ -123,8 +300,14 @@ export default function Dashboard() {
               Users stored in MongoDB
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Passwords are bcrypt hashes, matching the values saved in the database.
+              Passwords are bcrypt hashes, matching the values saved in the
+              database.
             </p>
+            {error && (
+              <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </p>
+            )}
           </div>
 
           <div className="space-y-3 p-4 md:hidden">
@@ -152,7 +335,9 @@ export default function Dashboard() {
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                     Email
                   </p>
-                  <p className="mb-2 break-all text-sm text-slate-700">{row.email}</p>
+                  <p className="mb-2 break-all text-sm text-slate-700">
+                    {row.email}
+                  </p>
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                     Hashed Password
                   </p>
@@ -208,92 +393,6 @@ export default function Dashboard() {
             </table>
           </div>
         </div>
-
-        <form
-          onSubmit={onUpdate}
-          className="rounded-xl bg-white p-4 shadow-md sm:p-6"
-        >
-          <h2 className="mb-4 text-lg font-semibold text-slate-800">
-            Edit Credentials
-          </h2>
-          {updateError && (
-            <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              {updateError}
-            </p>
-          )}
-          {updateSuccess && (
-            <p className="mb-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-              {updateSuccess}
-            </p>
-          )}
-          <label className="mb-4 block text-sm font-medium text-slate-700">
-            New email
-            <input
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={onChange}
-              required
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base text-slate-900 outline-none focus:border-slate-500"
-            />
-          </label>
-          <label className="mb-6 block text-sm font-medium text-slate-700">
-            New password
-            <input
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={onChange}
-              required
-              minLength={6}
-              placeholder="At least 6 characters"
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base text-slate-900 outline-none focus:border-slate-500"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full rounded-md bg-slate-800 px-4 py-2.5 font-medium text-white hover:bg-slate-700 disabled:opacity-60 sm:w-auto"
-          >
-            {saving ? "Saving..." : "Update credentials"}
-          </button>
-        </form>
-
-        <form
-          onSubmit={onDelete}
-          className="rounded-xl border border-red-100 bg-white p-4 shadow-md sm:p-6"
-        >
-          <h2 className="mb-1 text-lg font-semibold text-red-800">
-            Delete account
-          </h2>
-          <p className="mb-4 text-sm text-slate-600">
-            Enter your current password to permanently remove your record from
-            MongoDB.
-          </p>
-          {deleteError && (
-            <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              {deleteError}
-            </p>
-          )}
-          <label className="mb-6 block text-sm font-medium text-slate-700">
-            Password
-            <input
-              name="deletePassword"
-              type="password"
-              value={deletePassword}
-              onChange={(e) => setDeletePassword(e.target.value)}
-              required
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base text-slate-900 outline-none focus:border-red-400"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={deleting}
-            className="w-full rounded-md bg-red-700 px-4 py-2.5 font-medium text-white hover:bg-red-600 disabled:opacity-60 sm:w-auto"
-          >
-            {deleting ? "Deleting..." : "Delete my account"}
-          </button>
-        </form>
       </div>
     </div>
   );

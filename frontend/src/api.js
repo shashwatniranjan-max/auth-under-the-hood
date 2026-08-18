@@ -47,8 +47,8 @@ export async function updateCredentials(token, { email, password }) {
 }
 
 export async function deleteAccount(token, { password }) {
-  return request("/account", {
-    method: "DELETE",
+  return request("/delete", {
+    method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -57,12 +57,13 @@ export async function deleteAccount(token, { password }) {
 }
 
 async function request(path, options = {}) {
+  const { headers, ...rest } = options;
   const res = await fetch(`${API_URL}${path}`, {
+    ...rest,
     headers: {
       "Content-Type": "application/json",
-      ...(options.headers || {}),
+      ...(headers || {}),
     },
-    ...options,
   });
 
   const data = await res.json().catch(() => ({}));
