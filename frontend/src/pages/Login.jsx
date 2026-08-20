@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../api";
 
@@ -7,6 +7,16 @@ export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    if (!loading) {
+      setSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlow(true), 2500);
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   function onChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -66,7 +76,11 @@ export default function Login() {
           disabled={loading}
           className="w-full rounded-md bg-slate-800 py-2.5 font-medium text-white hover:bg-slate-700 disabled:opacity-60"
         >
-          {loading ? "Logging in..." : "Log in"}
+          {loading
+            ? slow
+              ? "Starting server..."
+              : "Logging in..."
+            : "Log in"}
         </button>
         <p className="mt-4 text-center text-sm text-slate-600">
           Need an account?{" "}

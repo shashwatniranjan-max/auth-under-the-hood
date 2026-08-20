@@ -7,6 +7,7 @@ export default function Dashboard() {
   const menuRef = useRef(null);
   const [user, setUser] = useState(null);
   const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(true);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
   const [updateError, setUpdateError] = useState("");
@@ -25,22 +26,25 @@ export default function Dashboard() {
       return;
     }
 
-    Promise.all([getMe(token), getUsers(token)])
-      .then(([meData, usersData]) => {
+    getMe(token)
+      .then((meData) => {
         setUser(meData.user);
-        setUsers(usersData.users);
         setForm({ email: meData.user.email, password: "" });
       })
-      .catch(async (err) => {
-        try {
-          const meData = await getMe(token);
-          setUser(meData.user);
-          setForm({ email: meData.user.email, password: "" });
-          setError(err.message || "Could not load users");
-        } catch {
-          localStorage.removeItem("token");
-          navigate("/login");
-        }
+      .catch(() => {
+        localStorage.removeItem("token");
+        navigate("/login");
+      });
+
+    getUsers(token)
+      .then((usersData) => {
+        setUsers(usersData.users);
+      })
+      .catch((err) => {
+        setError(err.message || "Could not load users");
+      })
+      .finally(() => {
+        setUsersLoading(false);
       });
   }, [navigate]);
 
@@ -122,7 +126,7 @@ export default function Dashboard() {
   if (!user) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-slate-100 px-4 text-slate-600">
-        Loading...
+        Loading your account...
       </div>
     );
   }
@@ -311,6 +315,9 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-3 p-4 md:hidden">
+            {usersLoading && (
+              <p className="text-sm text-slate-500">Loading users...</p>
+            )}
             {users.map((row) => {
               const isActive = String(row.id) === String(user?.id);
               return (
@@ -359,6 +366,16 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
+                {usersLoading && (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="px-6 py-6 text-sm text-slate-500"
+                    >
+                      Loading users...
+                    </td>
+                  </tr>
+                )}
                 {users.map((row) => {
                   const isActive = String(row.id) === String(user?.id);
                   return (
