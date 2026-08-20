@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>User Identification</title>
+    <link rel="preconnect" href="https://auth-under-the-hood.onrender.com" crossorigin />
+    <link rel="dns-prefetch" href="https://auth-under-the-hood.onrender.com" />
+    <script>
+      fetch("https://auth-under-the-hood.onrender.com/api/health", {
+        cache: "no-store",
+      }).catch(function () {});
+    </script>
   </head>
   <body>
     <div id="root"></div>
